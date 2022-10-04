@@ -65,37 +65,69 @@ const paddockManagers = [
   
   // 0 Arreglo con los ids de los responsables de cada cuartel, ordenados de menor a mayor
   export const listPaddockManagerIds = () => {
-    
+    return paddockManagers.map((paddockManager) => paddockManager.id).sort((a, b) => a - b);
   }
   
   // 1 Arreglo con los ruts de los responsables de los cuarteles, ordenados por nombre
   export const listPaddockManagersByName = () => {
-    
+    return paddockManagers.sort((a, b) => a.name.localeCompare(b.name)).map((paddockManager) => paddockManager.taxNumber);
   }
   
   // 2 Arreglo con los nombres de cada tipo de cultivo, ordenados decrecientemente por la suma TOTAL de la cantidad de hectáreas plantadas de cada uno de ellos.
   export const sortPaddockTypeByTotalArea = () => {
-    
+    return paddockType.sort((a, b) => {
+      const aArea = paddocks.filter((paddock) => paddock.paddockTypeId === a.id).reduce((acc, paddock) => acc + paddock.area, 0);
+      const bArea = paddocks.filter((paddock) => paddock.paddockTypeId === b.id).reduce((acc, paddock) => acc + paddock.area, 0);
+      return bArea - aArea;
+    }).map((paddockType) => paddockType.name);
   }
   
   // 3 Arreglo con los nombres de los administradores, ordenados decrecientemente por la suma TOTAL de hectáreas que administran.
   export const sortFarmManagerByAdminArea = () => {
-    
+    return paddockManagers.sort((a, b) => {
+      const aArea = paddocks.filter((paddock) => paddock.paddockManagerId === a.id).reduce((acc, paddock) => acc + paddock.area, 0);
+      const bArea = paddocks.filter((paddock) => paddock.paddockManagerId === b.id).reduce((acc, paddock) => acc + paddock.area, 0);
+      return bArea - aArea;
+    }).map((farmManager) => farmManager.name);
   }
   
   // 4 Objeto en que las claves sean los nombres de los campos y los valores un arreglo con los ruts de sus administradores ordenados alfabéticamente por nombre.
   export const farmManagerNames = () => {
-   
+    const farmManagerNames = {};
+    farms.forEach((farm) => {
+      const farmPaddocks = paddocks.filter((paddock) => paddock.farmId === farm.id);
+      const farmPaddockManagers = farmPaddocks.map((paddock) => paddockManagers.find((paddockManager) => paddockManager.id === paddock.paddockManagerId));
+      farmManagerNames[farm.name] = farmPaddockManagers.sort((a, b) => a.name.localeCompare(b.name)).map((paddockManager) => paddockManager.taxNumber);
+      farmManagerNames[farm.name] = [...new Set(farmManagerNames[farm.name])];
+    });
+    return farmManagerNames;
   }
   
   // 5 Arreglo ordenado decrecientemente con los m2 totales de cada campo que tengan más de 2 hectáreas en Paltos
   export const biggestAvocadoFarms = () => {
-
+    const paltosPaddocks = paddocks.filter((paddock) => paddock.paddockTypeId === 1);
+    const paltosPaddocksArea = paltosPaddocks.reduce((acc, paddock) => {
+      const exist = acc.find((paddockArea) => paddockArea.farmId === paddock.farmId);
+      if (exist) {
+        return acc.map((paddockArea) => {
+          if (paddockArea.farmId === paddock.farmId) {
+            return { ...paddockArea, area: paddockArea.area + paddock.area };
+          }
+          return paddockArea;
+        });
+      }
+      return [...acc, paddock];
+    }, []);
+  return paltosPaddocksArea.filter((paddock) => paddock.area > 20000).sort((a, b) => b.area - a.area).map((paddock) => paddock.area);
   }
   
-  // 6 Arreglo con nombres de los administradores de la FORESTAL Y AGRÍCOLA LO ENCINA, ordenados por nombre, que trabajen más de 1000 m2 de Cerezas
+  // 6 Arreglo con nombres de los administradores de la FORESTAL Y AGRÍCOLA LO ENCINA, ordenados por nombre, que trabajen más de 1000 m2 de Cerezas en ese mismo campo.
   export const biggestCherriesManagers = () => {
-    
+    const fieldId=farms.filter(campo=>campo.name==="FORESTAL Y AGRICOLA LO ENCINA")[0].id;
+    const fruitsId=paddockType.filter(fru=>fru.name==="CEREZAS")[0].id;
+    const totalPaddocks=paddocks.filter(padd=>padd.farmId===fieldId&&padd.area>1000&&padd.paddockTypeId===fruitsId)[0].paddockManagerId;
+  
+  return  paddockManagers.filter(are=>are.id===totalPaddocks).sort((a,b)=>a-b).map(are=>are.name);
   }
   
   // 7 Objeto en el cual las claves sean el nombre del administrador y el valor un arreglo con los nombres de los campos que administra, ordenados alfabéticamente
